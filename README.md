@@ -68,3 +68,7 @@ Downloads generated `.pptx` file.
 3. Replace `generate` stub with real model inference and layout normalization.
 4. Expand component mapping for richer editable PPTX output.
 5. Add preview images and human-in-the-loop correction before export.
+
+## iPhone Step 1 included
+- Added `ios/` SwiftUI + PencilKit starter to capture hand-drawn wireframes and send a normalized payload to the backend `generate` endpoint.
+- See `ios/README.md` for setup in Xcode and next steps.
