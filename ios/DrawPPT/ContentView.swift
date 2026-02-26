@@ -6,7 +6,6 @@ struct ContentView: View {
     @State private var projectId = "demo"
     @State private var statusText = "Draw your wireframe, then upload as Step 1 JSON."
     @State private var isLoading = false
-    @State private var exportedFileURL: URL?
 
     // Change to your backend host if testing on device:
     // - iOS simulator can usually reach localhost directly.
@@ -27,7 +26,6 @@ struct ContentView: View {
                     Button("Clear") {
                         drawing = PKDrawing()
                         statusText = "Canvas cleared."
-                        exportedFileURL = nil
                     }
 
                     Spacer()
@@ -36,18 +34,6 @@ struct ContentView: View {
                         Task { await uploadStepOne() }
                     }
                     .disabled(isLoading || projectId.isEmpty)
-
-                    Button(isLoading ? "Exporting..." : "Export PPTX") {
-                        Task { await exportPPTX() }
-                    }
-                    .disabled(isLoading || projectId.isEmpty)
-                }
-
-                if let exportedFileURL {
-                    ShareLink(item: exportedFileURL) {
-                        Label("Share Last Export", systemImage: "square.and.arrow.up")
-                            .font(.footnote)
-                    }
                 }
 
                 Text(statusText)
@@ -60,7 +46,10 @@ struct ContentView: View {
         }
     }
 
-    private func makeStepOneDocument() -> FrameDocument {
+    private func uploadStepOne() async {
+        isLoading = true
+        defer { isLoading = false }
+
         // Step 1 placeholder mapping:
         // We currently transform the drawing bounds into a single "card" element.
         // Later steps should run model inference to detect structured UI components.
@@ -84,34 +73,13 @@ struct ContentView: View {
             style: Style(mode: "lowfi", theme: "gray")
         )
 
-        return FrameDocument(projectId: projectId, pages: [page])
-    }
-
-    private func uploadStepOne() async {
-        isLoading = true
-        defer { isLoading = false }
+        let document = FrameDocument(projectId: projectId, pages: [page])
 
         do {
-            let document = makeStepOneDocument()
             try await apiClient.generate(projectId: projectId, document: document)
-            statusText = "Upload success. Next: export pptx and share with PowerPoint."
+            statusText = "Upload success. Next: call export endpoint and preview slide output."
         } catch {
             statusText = "Upload failed: \(error.localizedDescription)"
-        }
-    }
-
-    private func exportPPTX() async {
-        isLoading = true
-        defer { isLoading = false }
-
-        do {
-            let document = makeStepOneDocument()
-            let exportResponse = try await apiClient.exportPPTX(projectId: projectId, document: document)
-            let fileURL = try await apiClient.downloadExport(exportId: exportResponse.exportId)
-            exportedFileURL = fileURL
-            statusText = "Export ready: \(fileURL.lastPathComponent). Use Share to open in PowerPoint."
-        } catch {
-            statusText = "Export failed: \(error.localizedDescription)"
         }
     }
 }

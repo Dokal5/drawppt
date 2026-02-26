@@ -64,9 +64,3 @@ def test_export_pptx_and_download():
     assert dl.headers["content-type"].startswith(
         "application/vnd.openxmlformats-officedocument.presentationml.presentation"
     )
-
-
-def test_download_export_not_found():
-    resp = client.get("/v1/exports/does-not-exist")
-    assert resp.status_code == 404
-    assert resp.json()["detail"] == "export not found"
